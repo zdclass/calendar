@@ -102,6 +102,24 @@
             </div>
         </header>
 
+        <!-- Today/Tomorrow Events Section -->
+        <section id="agenda-section" class="mb-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div>
+                    <h3 class="text-xl font-bold mb-3 border-b-2 border-gray-200 dark:border-gray-700 pb-2 text-gray-800 dark:text-gray-200">今日事項</h3>
+                    <div id="today-agenda" class="space-y-2 text-gray-700 dark:text-gray-300 min-h-[40px]">
+                        <!-- Today's events will be populated here -->
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold mb-3 border-b-2 border-gray-200 dark:border-gray-700 pb-2 text-gray-800 dark:text-gray-200">明日事項</h3>
+                    <div id="tomorrow-agenda" class="space-y-2 text-gray-700 dark:text-gray-300 min-h-[40px]">
+                        <!-- Tomorrow's events will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <main class="flex flex-col lg:flex-row lg:space-x-8">
             <!-- Left Side: Calendars -->
             <div id="calendar-container" class="w-full lg:w-3/5 space-y-8">
@@ -365,24 +383,65 @@
             console.log("User signed out.");
         });
 
-
-        // --- Render Functions (No change in this section) ---
+        // --- Core Render Function ---
         const rerender = () => {
             calendarContainer.innerHTML = '';
             eventsListContainer.innerHTML = '';
+
             const eventMap = new Map();
             events.forEach(event => {
-                const startDate = new Date(event.date + 'T00:00:00');
-                const endDate = event.date_end ? new Date(event.date_end + 'T00:00:00') : startDate;
-                for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+                const [startY, startM, startD] = event.date.split('-').map(Number);
+                const startDate = new Date(Date.UTC(startY, startM - 1, startD));
+
+                const endDate = event.date_end
+                    ? new Date(Date.UTC(...event.date_end.split('-').map((n, i) => i === 1 ? n - 1 : Number(n))))
+                    : new Date(startDate.getTime());
+
+                for (let d = startDate; d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
                     const dateString = d.toISOString().split('T')[0];
                     if (!eventMap.has(dateString)) eventMap.set(dateString, []);
                     eventMap.get(dateString).push(event);
                 }
             });
+
+            renderAgenda(eventMap);
             renderCalendars(eventMap);
             renderEventsList();
         };
+
+        // --- Agenda Functions ---
+        function renderAgenda(eventMap) {
+            const todayAgendaContainer = document.getElementById('today-agenda');
+            const tomorrowAgendaContainer = document.getElementById('tomorrow-agenda');
+
+            const today = new Date();
+            const tomorrow = new Date();
+            tomorrow.setDate(today.getDate() + 1);
+
+            const todayString = today.toLocaleDateString('sv');
+            const tomorrowString = tomorrow.toLocaleDateString('sv');
+
+            const populateAgenda = (container, dateString) => {
+                container.innerHTML = '';
+                const dayEvents = eventMap.get(dateString) || [];
+                const filteredEvents = dayEvents.filter(e => e.desc);
+
+                if (filteredEvents.length > 0) {
+                    filteredEvents.forEach(event => {
+                        const p = document.createElement('p');
+                        p.className = `p-2 rounded-md ${event.special ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' : 'bg-blue-100 dark:bg-blue-800'}`;
+                        p.textContent = event.desc;
+                        container.appendChild(p);
+                    });
+                } else {
+                    container.innerHTML = '<p class="text-gray-500">無預定事項</p>';
+                }
+            };
+
+            populateAgenda(todayAgendaContainer, todayString);
+            populateAgenda(tomorrowAgendaContainer, tomorrowString);
+        }
+
         function renderCalendars(eventMap) {
             const startYear = 2025, startMonth = 8, endYear = 2026, endMonth = 0;
             for (let y = startYear; y <= endYear; y++) {
@@ -393,6 +452,7 @@
                 }
             }
         }
+
         function renderMonth(year, month, eventMap) {
             const monthContainer = document.createElement('div');
             monthContainer.className = 'bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg';
@@ -402,11 +462,13 @@
             monthContainer.innerHTML = headerHTML;
             const bodyEl = document.createElement('div');
             bodyEl.className = 'grid calendar-grid gap-1';
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
+            const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+
             for (let i = 0; i < firstDay; i++) bodyEl.appendChild(document.createElement('div'));
+            
             for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(year, month, day);
+                const date = new Date(Date.UTC(year, month, day));
                 const dateString = date.toISOString().split('T')[0];
                 const dayEvents = eventMap.get(dateString) || [];
                 const cellEl = document.createElement('div');
@@ -444,14 +506,23 @@
             monthContainer.appendChild(bodyEl);
             calendarContainer.appendChild(monthContainer);
         }
+
         function renderEventsList() {
-            eventsListContainer.innerHTML = ''; // Clear previous list
+            eventsListContainer.innerHTML = '';
             const sortedEvents = events.filter(e => e.desc).sort((a,b) => new Date(a.date) - new Date(b.date));
             sortedEvents.forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.className = 'flex items-center space-x-3 p-2 rounded-lg';
-                const startDate = new Date(event.date + 'T00:00:00');
-                let dateText = event.date_end ? `${startDate.getMonth()+1}/${startDate.getDate()}-${new Date(event.date_end+'T00:00:00').getMonth()+1}/${new Date(event.date_end+'T00:00:00').getDate()}` : `${startDate.getMonth()+1}/${startDate.getDate()}`;
+                
+                const formatUtcDate = (dateStr) => {
+                    if (!dateStr) return '';
+                    const parts = dateStr.split('-');
+                    return `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}`;
+                };
+                let dateText = event.date_end 
+                    ? `${formatUtcDate(event.date)}-${formatUtcDate(event.date_end)}` 
+                    : formatUtcDate(event.date);
+
                 let buttonsHTML = '';
                 if (currentUser) {
                     buttonsHTML = `<div class="flex-shrink-0 flex space-x-2"><button data-id="${event.id}" class="edit-btn text-gray-400 hover:text-blue-500 transition-colors">編輯</button><button data-id="${event.id}" class="delete-btn text-gray-400 hover:text-red-500 transition-colors">刪除</button></div>`;
@@ -465,13 +536,30 @@
             });
         }
         
-        // --- UI Interaction Functions (No change in this section) ---
+        // --- UI Interaction Functions ---
         const showTooltip = (dayEvents, e) => { const eventDescs = dayEvents.map(ev => ev.desc).filter(Boolean).join('<br>'); if (!eventDescs) return; tooltip.innerHTML = eventDescs; tooltip.classList.remove('hidden', 'opacity-0'); updateTooltipPosition(e); };
         const hideTooltip = () => tooltip.classList.add('hidden', 'opacity-0');
         const updateTooltipPosition = (e) => { tooltip.style.left = `${e.pageX + 15}px`; tooltip.style.top = `${e.pageY + 15}px`; };
         const openModal = (modal) => { modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); if (modal.querySelector('div:first-child')) { modal.querySelector('div:first-child').classList.remove('scale-95'); } }, 10); };
         const closeModal = (modal) => { modal.classList.add('opacity-0'); if (modal.querySelector('div:first-child')) { modal.querySelector('div:first-child').classList.add('scale-95'); } setTimeout(() => modal.classList.add('hidden'), 300); };
-        const showDayDetails = (dateString, dayEvents) => { const date = new Date(dateString + 'T00:00:00'); document.getElementById('modal-date-title').textContent = date.toLocaleDateString('zh-Hant', { year: 'numeric', month: 'long', day: 'numeric' }); const modalList = document.getElementById('modal-events-list'); modalList.innerHTML = ''; const filteredEvents = dayEvents.filter(ev => ev.desc); if (filteredEvents.length > 0) { filteredEvents.forEach(ev => { const p = document.createElement('p'); p.textContent = ev.desc; p.className = 'p-2 rounded-md bg-gray-100 dark:bg-gray-700'; modalList.appendChild(p); }); } else { modalList.innerHTML = '<p class="text-gray-500">本日無特殊行程</p>'; } openModal(dayDetailsModal); };
+        
+        const showDayDetails = (dateString, dayEvents) => { 
+            const date = new Date(dateString); // Parses YYYY-MM-DD as UTC
+            document.getElementById('modal-date-title').textContent = date.toLocaleDateString('zh-Hant', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' }); 
+            const modalList = document.getElementById('modal-events-list'); 
+            modalList.innerHTML = ''; 
+            const filteredEvents = dayEvents.filter(ev => ev.desc); 
+            if (filteredEvents.length > 0) { 
+                filteredEvents.forEach(ev => { 
+                    const p = document.createElement('p'); 
+                    p.textContent = ev.desc; p.className = 'p-2 rounded-md bg-gray-100 dark:bg-gray-700'; 
+                    modalList.appendChild(p); 
+                }); 
+            } else { 
+                modalList.innerHTML = '<p class="text-gray-500">本日無特殊行程</p>'; 
+            } 
+            openModal(dayDetailsModal); 
+        };
         closeDetailsModalBtn.addEventListener('click', () => closeModal(dayDetailsModal));
         const openAddForm = () => { document.getElementById('form-title').textContent = '新增活動'; eventForm.reset(); document.getElementById('event-id').value = ''; openModal(eventFormModal); };
         const openEditForm = (id) => { const event = events.find(e => e.id === id); if (!event) return; document.getElementById('form-title').textContent = '修改活動'; document.getElementById('event-id').value = event.id; document.getElementById('event-desc').value = event.desc || ''; document.getElementById('event-start-date').value = event.date; document.getElementById('event-end-date').value = event.date_end || ''; document.getElementById('event-special').checked = event.special || false; openModal(eventFormModal); };
