@@ -1,0 +1,52 @@
+name: Deploy to GitHub Pages
+
+on:
+  # 在推送到 main 分支時執行
+  push:
+    branches:
+      - main
+
+# 設定 workflow 的權限，這是讓 GitHub Actions 可以發布網站的必要設定
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  # 建立與部署的工作
+  build-and-deploy:
+    # 使用最新的 Ubuntu 虛擬環境
+    runs-on: ubuntu-latest
+    steps:
+      # 步驟 1: 下載您的程式碼到虛擬環境中
+      - name: Checkout
+        uses: actions/checkout@v4 # 使用 v4 (最新版)
+
+      # 步驟 2: 替換 index.html 中的 Firebase 設定預留位置
+      # 這個步驟會從您設定的 GitHub Secrets 中讀取金鑰，並安全地填入檔案
+      - name: Replace Firebase Config Placeholders
+        run: |
+          sed -i 's|__API_KEY__|${{ secrets.API_KEY }}|g' index.html
+          sed -i 's|__AUTH_DOMAIN__|${{ secrets.AUTH_DOMAIN }}|g' index.html
+          sed -i 's|__PROJECT_ID__|${{ secrets.PROJECT_ID }}|g' index.html
+          sed -i 's|__STORAGE_BUCKET__|${{ secrets.STORAGE_BUCKET }}|g' index.html
+          sed -i 's|__MESSAGING_SENDER_ID__|${{ secrets.MESSAGING_SENDER_ID }}|g' index.html
+          sed -i 's|__APP_ID__|${{ secrets.APP_ID }}|g' index.html
+          sed -i 's|__MEASUREMENT_ID__|${{ secrets.MEASUREMENT_ID }}|g' index.html
+
+      # 步驟 3: 設定 GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5 # 使用 v5 (最新版)
+
+      # 步驟 4: 將處理好的網站檔案（已填入金鑰）打包
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3 # 使用 v3 (最新版)
+        with:
+          # 指定打包整個資料夾
+          path: '.'
+
+      # 步驟 5: 將打包好的成品部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4 # 使用 v4 (最新版)
+
