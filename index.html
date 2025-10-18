@@ -117,20 +117,32 @@
         </section>
 
         <main class="flex flex-col lg:flex-row lg:space-x-8">
-            <!-- Left Side: Calendars -->
-            <div id="calendar-container" class="w-full lg:w-3/5 space-y-8">
-                <!-- Calendars will be generated here -->
+            <!-- Left Side: Calendar -->
+            <div class="w-full lg:w-3/5">
+                <div id="calendar-main" class="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg">
+                    <div class="flex justify-between items-center mb-4 border-b pb-2">
+                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+                        <h3 id="current-month-year" class="text-xl font-bold text-center"></h3>
+                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                    <div id="calendar-weekdays" class="grid calendar-grid gap-1 text-sm font-semibold text-center text-gray-500 dark:text-gray-400 mb-2"></div>
+                    <div id="calendar-grid-body" class="grid calendar-grid gap-1"></div>
+                </div>
             </div>
 
             <!-- Right Side: Events List -->
             <aside class="w-full lg:w-2/5 mt-8 lg:mt-0">
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 lg:sticky top-8">
                     <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 dark:border-gray-700 pb-2">
-                        <h3 class="text-2xl font-bold">重要行事</h3>
+                        <h3 class="text-2xl font-bold">本月行事</h3>
                         <button id="add-event-btn-main" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">新增</button>
                     </div>
                     <div id="events-list" class="space-y-3 h-[75vh] overflow-y-auto pr-2">
-                        <!-- Events will be generated here -->
+                        <!-- Events for the current month will be generated here -->
                     </div>
                 </div>
             </aside>
@@ -216,11 +228,12 @@
         let events = [];
         let currentUser = null;
         let unsubscribe = null; 
-        let isInitialLoad = true;
+        let displayDate = new Date(); // Tracks the currently viewed month
+        const CALENDAR_START_DATE = new Date(2025, 8, 1); // Sep 2025
+        const CALENDAR_END_DATE = new Date(2026, 0, 1);   // Jan 2026
 
         // --- UI Elements ---
         const loadingOverlay = document.getElementById('loading-overlay');
-        const calendarContainer = document.getElementById('calendar-container');
         const eventsListContainer = document.getElementById('events-list');
         const tooltip = document.getElementById('tooltip');
         const authStatus = document.getElementById('auth-status');
@@ -242,6 +255,11 @@
         const addEventModalBtn = document.getElementById('add-event-modal-btn');
         const todayEventsEl = document.getElementById('today-events');
         const tomorrowEventsEl = document.getElementById('tomorrow-events');
+        const prevMonthBtn = document.getElementById('prev-month-btn');
+        const nextMonthBtn = document.getElementById('next-month-btn');
+        const currentMonthYearEl = document.getElementById('current-month-year');
+        const calendarWeekdaysEl = document.getElementById('calendar-weekdays');
+        const calendarGridBodyEl = document.getElementById('calendar-grid-body');
 
         const initialEvents = [
             { date: "2025-09-01", desc: "開學日/備課週開始、上課" }, { date: "2025-09-01", date_end: "2025-09-12", desc: "友善校園週暨反霸凌活動" }, { date: "2025-09-08", desc: "國中第8節輔導課、學習扶助課程及晚自習開始" }, { date: "2025-09-09", date_end: "2025-09-18", desc: "註冊組發放期初程" }, { date: "2025-09-15", date_end: "2025-10-03", desc: "身高體重視力檢查開始" }, { date: "2025-09-16", desc: "一年級環保局家庭廢棄物問卷" }, { date: "2025-09-18", desc: "國家防災日預演" }, { date: "2025-09-19", desc: "國家防災日演練" }, { date: "2025-09-26", desc: "八年級HPV疫苗接種、全校班親會" }, { date: "2025-09-28", desc: "教師節", special: true }, { date: "2025-09-29", desc: "補假 (教師節)", symbol: '■' }, { date: "2025-10-06", desc: "國慶放假", symbol: '■' }, { date: "2025-10-09", desc: "佛光先生舍利講座(五年級)" }, { date: "2025-10-10", desc: "國慶日放假", special: true }, { date: "2025-10-13", symbol: '▲' }, { date: "2025-10-14", date_end: "2025-10-15", desc: "國中第1次定期評量" }, { date: "2025-10-14", desc: "一年級入學測驗(智力)" }, { date: "2025-10-14", desc: "四年級參觀人口政策計畫" }, { date: "2025-10-16", desc: "十年級抽血檢查" }, { date: "2025-10-16", date_end: "2025-10-17", desc: "九年級畢旅" }, { date: "2025-10-20", date_end: "2025-10-31", desc: "國中小藝術季布置(國中美術)" }, { date: "2025-10-21", desc: "全校流感疫苗接種" }, { date: "2025-10-24", desc: "補假" }, { date: "2025-10-25", desc: "光復節放假", special: true }, { date: "2025-10-27", desc: "作業抽查(國中社會)" }, { date: "2025-10-28", desc: "作業抽查(國小中年級)" }, { date: "2025-10-29", desc: "七年級抽血檢查" }, { date: "2025-11-01", desc: "親職講座" }, { date: "2025-11-04", desc: "作業抽查(國中小英文)(11/12國小英文)" }, { date: "2025-11-05", date_end: "2025-11-06", desc: "國小第1次定期評量" , symbol_start: '▼', symbol_end: '□' }, { date: "2025-11-06", date_end: "2025-11-07", desc: "九年級心理測驗參考" }, { date: "2025-11-07", desc: "一、四、七年級健康檢查" }, { date: "2025-11-18", desc: "國小一、六年級戶外教育" }, { date: "2025-11-21", desc: "作業抽查(國中自然)" }, { date: "2025-11-26", desc: "作業抽查(國中數學、八年級聯絡簿)" }, { date: "2025-11-26", desc: "吃水果日/發放通知" }, { date: "2025-11-30", symbol: '▲' }, { date: "2025-12-01", date_end: "2025-12-02", desc: "國中第2次定期評量", symbol_end: '▼' }, { date: "2025-12-03", desc: "作業抽查(國小國語)", symbol: '□' }, { date: "2025-12-03", desc: "藝文競賽(才藝子弟)書法、繪畫及作文" }, { date: "2025-12-10", desc: "國小英語朗讀比賽" }, { date: "2025-12-13", desc: "校慶運動會", special: true }, { date: "2025-12-15", desc: "校慶補假", symbol: '■' }, { date: "2025-12-17", desc: "作業抽查(國小自然)" }, { date: "2025-12-21", symbol: '▲' }, { date: "2025-12-23", desc: "藝文競賽(演講、朗讀及說故事)" }, { date: "2025-12-23", date_end: "2025-12-24", desc: "九年級技藝班術科抽離會考" }, { date: "2025-12-24", desc: "作業抽查(國中自習)", symbol: '■' }, { date: "2025-12-25", desc: "行憲紀念日放假", symbol: '□' }, { date: "2025-12-31", desc: "國中小藝術季開幕才藝表演" }, { date: "2025-12-31", desc: "九年級聯絡簿抽查" }, { date: "2026-01-01", desc: "元旦放假", special: true, symbol: '□' }, { date: "2026-01-02", symbol: '■' }, { date: "2026-01-05", date_end: "2026-01-09", desc: "國中美術才藝換商品卡" }, { date: "2026-01-08", desc: "校內本土語文競賽" }, { date: "2026-01-09", desc: "作業抽查(國小作文)" }, { date: "2026-01-12", symbol: '▲' }, { date: "2026-01-13", date_end: "2026-01-14", desc: "國小第2次定期評量" }, { date: "2026-01-15", date_end: "2026-01-16", desc: "國中第3次定期評量", symbol_start: '▼', symbol_end: '□' }, { date: "2026-01-19", symbol: '▲' }, { date: "2026-01-20", desc: "休業式", symbol: '▼' }, { date: "2026-01-21", date_end: "2026-01-23", desc: "補下學期課程" }, { date: "2026-01-24", desc: "放寒假", special: true }
@@ -249,13 +267,10 @@
 
         // --- Core Functions ---
         const rerender = () => {
-            if (!document.body.contains(calendarContainer)) return; // Ensure elements exist
-            calendarContainer.innerHTML = '';
-            eventsListContainer.innerHTML = '';
+            if (!document.body.contains(calendarGridBodyEl)) return;
 
             const eventMap = new Map();
             events.forEach(event => {
-                // Use UTC dates to avoid timezone issues
                 const startDate = new Date(event.date + 'T00:00:00Z');
                 const endDate = event.date_end ? new Date(event.date_end + 'T00:00:00Z') : startDate;
                 for (let d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
@@ -265,11 +280,24 @@
                 }
             });
             renderTodayTomorrow(eventMap);
-            renderCalendars(eventMap);
-            renderEventsList();
+            renderSingleMonth(eventMap);
+            renderMonthlyEventsList();
         };
+        
+        function initializeCalendarView() {
+            const today = new Date();
+            let initialDate = new Date(today.getFullYear(), today.getMonth(), 1);
+
+            if (initialDate < CALENDAR_START_DATE) {
+                initialDate = new Date(CALENDAR_START_DATE);
+            } else if (initialDate > CALENDAR_END_DATE) {
+                initialDate = new Date(CALENDAR_END_DATE);
+            }
+            displayDate = initialDate;
+        }
 
         function setupApp() {
+            initializeCalendarView();
             try {
                 const firebaseConfig = {
                     apiKey: "__API_KEY__",
@@ -285,7 +313,6 @@
                     throw new Error("Firebase config placeholders not replaced. Run this through the GitHub Actions workflow.");
                 }
 
-                console.log("Initializing Firebase with Project ID:", firebaseConfig.projectId);
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -297,14 +324,11 @@
                 firebaseInitialized = false;
             }
 
-            // Always setup listener, it will handle fallback
             setupSnapshotListener();
-
-            // Setup Auth listener
             if (firebaseInitialized) {
                 onAuthStateChanged(auth, handleAuthStateChange);
             } else {
-                handleAuthStateChange(null); // Force guest mode
+                handleAuthStateChange(null);
             }
         }
 
@@ -315,8 +339,6 @@
                 loginBtn.classList.add('hidden');
                 logoutBtn.classList.remove('hidden');
                 addEventBtnMain.classList.remove('hidden');
-
-                // Check and seed data only after admin logs in
                 seedInitialDataIfNeeded();
             } else {
                 currentUser = null;
@@ -332,14 +354,8 @@
             loadingOverlay.style.display = 'flex';
 
             if (!firebaseInitialized) {
-                console.warn("Firebase not initialized. Falling back to local initialEvents data.");
                 events = initialEvents;
                 rerender();
-                if (isInitialLoad) {
-                    scrollToCurrentMonth();
-                    scrollToCurrentEvent();
-                    isInitialLoad = false;
-                }
                 loadingOverlay.style.display = 'none';
                 return;
             }
@@ -353,29 +369,15 @@
                 });
 
                 if (snapshot.empty && !currentUser) {
-                    // DB is empty and user is a guest, use local data as fallback
                     events = initialEvents;
                 }
                 
                 rerender();
-
-                if (isInitialLoad) {
-                    scrollToCurrentMonth();
-                    scrollToCurrentEvent();
-                    isInitialLoad = false;
-                }
-
                 loadingOverlay.style.display = 'none';
             }, (error) => {
                 console.error("Error fetching events from Firestore:", error.message);
-                // Fallback to local data on permission error for guests
                 events = initialEvents;
                 rerender();
-                if (isInitialLoad) {
-                    scrollToCurrentMonth();
-                    scrollToCurrentEvent();
-                    isInitialLoad = false;
-                }
                 loadingOverlay.style.display = 'none';
             });
         }
@@ -385,59 +387,18 @@
             try {
                 const querySnapshot = await getDocs(eventsCollectionRef);
                 if (querySnapshot.empty) {
-                    console.log("Database is empty. Seeding initial data as admin...");
                     const batch = writeBatch(db);
                     initialEvents.forEach(event => {
                         const docRef = doc(eventsCollectionRef);
                         batch.set(docRef, event);
                     });
                     await batch.commit();
-                    console.log("Initial data seeded successfully.");
                 }
             } catch (err) {
                 console.error("Error during admin's data seed check:", err);
             }
         }
         
-        function scrollToCurrentMonth() {
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth(); // 0-11
-            
-            const startYear = 2025, startMonth = 8; // September is 8
-            const endYear = 2026, endMonth = 0; // January is 0
-
-            let targetYear = currentYear;
-            let targetMonth = currentMonth;
-
-            // Clamp the date to the calendar's display range
-            if (targetYear < startYear || (targetYear === startYear && targetMonth < startMonth)) {
-                targetYear = startYear;
-                targetMonth = startMonth;
-            } else if (targetYear > endYear || (targetYear === endYear && targetMonth > endMonth)) {
-                targetYear = endYear;
-                targetMonth = endMonth;
-            }
-
-            const targetId = `month-${targetYear}-${targetMonth}`;
-            const targetElement = document.getElementById(targetId);
-
-            if (targetElement) {
-                setTimeout(() => {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 200);
-            }
-        }
-
-        function scrollToCurrentEvent() {
-            const targetElement = document.getElementById('current-month-event-marker');
-            if (targetElement) {
-                setTimeout(() => {
-                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 200); // Small delay to ensure rendering is complete
-            }
-        }
-
         function renderTodayTomorrow(eventMap) {
             const today = new Date();
             const tomorrow = new Date();
@@ -449,38 +410,28 @@
             const todayEvents = eventMap.get(todayString) || [];
             const tomorrowEvents = eventMap.get(tomorrowString) || [];
 
-            todayEventsEl.innerHTML = todayEvents.length > 0 
-                ? todayEvents.map(e => `<div>- ${e.desc}</div>`).join('') 
-                : '<p>無</p>';
-            tomorrowEventsEl.innerHTML = tomorrowEvents.length > 0 
-                ? tomorrowEvents.map(e => `<div>- ${e.desc}</div>`).join('') 
-                : '<p>無</p>';
+            todayEventsEl.innerHTML = todayEvents.length > 0 ? todayEvents.map(e => `<div>- ${e.desc}</div>`).join('') : '<p>無</p>';
+            tomorrowEventsEl.innerHTML = tomorrowEvents.length > 0 ? tomorrowEvents.map(e => `<div>- ${e.desc}</div>`).join('') : '<p>無</p>';
         }
 
-        function renderCalendars(eventMap) {
-            const startYear = 2025, startMonth = 8, endYear = 2026, endMonth = 0;
-            for (let y = startYear; y <= endYear; y++) {
-                const mStart = (y === startYear) ? startMonth : 0;
-                const mEnd = (y === endYear) ? endMonth : 11;
-                for (let m = mStart; m <= mEnd; m++) {
-                    renderMonth(y, m, eventMap);
-                }
-            }
-        }
-        
-        function renderMonth(year, month, eventMap) {
-            const monthContainer = document.createElement('div');
-            monthContainer.id = `month-${year}-${month}`;
-            monthContainer.className = 'bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg';
-            const monthName = new Date(year, month).toLocaleString('zh-Hant', { month: 'long', year: 'numeric' });
+        function renderSingleMonth(eventMap) {
+            const year = displayDate.getFullYear();
+            const month = displayDate.getMonth();
+
+            currentMonthYearEl.textContent = displayDate.toLocaleString('zh-Hant', { month: 'long', year: 'numeric' });
+
             const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
-            let headerHTML = `<h3 class="text-xl font-bold text-center mb-4">${monthName}</h3><div class="grid calendar-grid gap-1 text-sm font-semibold text-center text-gray-500 dark:text-gray-400 mb-2">${daysOfWeek.map(d=>`<div>${d}</div>`).join('')}</div>`;
-            monthContainer.innerHTML = headerHTML;
-            const bodyEl = document.createElement('div');
-            bodyEl.className = 'grid calendar-grid gap-1';
-            const firstDay = new Date(year, month, 1).getDay();
+            calendarWeekdaysEl.innerHTML = daysOfWeek.map(d=>`<div>${d}</div>`).join('');
+            
+            calendarGridBodyEl.innerHTML = '';
+
+            const firstDayOfMonth = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for (let i = 0; i < firstDay; i++) bodyEl.appendChild(document.createElement('div'));
+            
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+
+            for (let i = 0; i < firstDayOfMonth; i++) calendarGridBodyEl.appendChild(document.createElement('div'));
 
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(Date.UTC(year, month, day));
@@ -491,6 +442,11 @@
                 const contentEl = document.createElement('div');
                 contentEl.className = 'day-content rounded-lg';
                 contentEl.textContent = day;
+
+                // Highlight today's date
+                if (dateString === todayString) {
+                    contentEl.classList.add('ring-2', 'ring-blue-500', 'dark:ring-blue-400');
+                }
 
                 if (dayEvents.length > 0) {
                     const hasSpecial = dayEvents.some(e => e.special);
@@ -514,36 +470,35 @@
                 }
                 cellEl.addEventListener('click', () => showDayModal(dateString, dayEvents));
                 cellEl.appendChild(contentEl);
-                bodyEl.appendChild(cellEl);
+                calendarGridBodyEl.appendChild(cellEl);
             }
-            monthContainer.appendChild(bodyEl);
-            calendarContainer.appendChild(monthContainer);
+
+            const firstDayOfDisplayMonth = new Date(year, month, 1);
+            prevMonthBtn.disabled = firstDayOfDisplayMonth <= CALENDAR_START_DATE;
+            
+            const nextMonthFirstDay = new Date(year, month + 1, 1);
+            nextMonthBtn.disabled = nextMonthFirstDay > CALENDAR_END_DATE;
         }
 
-        function renderEventsList() {
+        function renderMonthlyEventsList() {
             eventsListContainer.innerHTML = '';
-            const sortedEvents = events.filter(e => e.desc).sort((a,b) => new Date(a.date) - new Date(b.date));
-            
-            const today = new Date();
-            const currentYear = today.getFullYear();
-            const currentMonth = today.getMonth();
-            let markerAdded = false;
+            const year = displayDate.getFullYear();
+            const month = displayDate.getMonth();
 
-            sortedEvents.forEach(event => {
+            const monthlyEvents = events.filter(event => {
+                const eventDate = new Date(event.date + 'T00:00:00Z');
+                return eventDate.getUTCFullYear() === year && eventDate.getUTCMonth() === month;
+            }).sort((a,b) => new Date(a.date) - new Date(b.date));
+
+            if(monthlyEvents.length === 0) {
+                eventsListContainer.innerHTML = '<p class="text-gray-500">本月無特殊行程</p>';
+                return;
+            }
+            
+            monthlyEvents.forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.className = 'flex items-center space-x-3 p-2 rounded-lg';
                 const startDate = new Date(event.date + 'T00:00:00Z');
-
-                // Add ID to the first event of the current month or a future month
-                if (!markerAdded) {
-                    const eventYear = startDate.getUTCFullYear();
-                    const eventMonth = startDate.getUTCMonth();
-                    if (eventYear > currentYear || (eventYear === currentYear && eventMonth >= currentMonth)) {
-                        eventElement.id = 'current-month-event-marker';
-                        markerAdded = true;
-                    }
-                }
-                
                 let dateText = event.date_end 
                     ? `${startDate.getUTCMonth()+1}/${startDate.getUTCDate()}-${new Date(event.date_end+'T00:00:00Z').getUTCMonth()+1}/${new Date(event.date_end+'T00:00:00Z').getUTCDate()}` 
                     : `${startDate.getUTCMonth()+1}/${startDate.getUTCDate()}`;
@@ -558,10 +513,22 @@
         
         // --- Event Handlers & UI Logic ---
         document.addEventListener('DOMContentLoaded', setupApp);
+        prevMonthBtn.addEventListener('click', () => {
+            displayDate.setMonth(displayDate.getMonth() - 1);
+            rerender();
+        });
+        nextMonthBtn.addEventListener('click', () => {
+            displayDate.setMonth(displayDate.getMonth() + 1);
+            rerender();
+        });
         loginBtn.addEventListener('click', () => { loginForm.reset(); loginError.textContent = ''; openModal(loginModal); });
         cancelLoginBtn.addEventListener('click', () => closeModal(loginModal));
         logoutBtn.addEventListener('click', () => { if(firebaseInitialized) signOut(auth); });
-        addEventBtnMain.addEventListener('click', () => showDayModal(new Date().toISOString().split('T')[0], []));
+        addEventBtnMain.addEventListener('click', () => {
+            const todayString = new Date().toISOString().split('T')[0];
+            const todayEvents = events.filter(e => e.date === todayString);
+            showDayModal(todayString, todayEvents);
+        });
 
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -722,7 +689,7 @@
         
         const confirmModal = document.getElementById('confirm-modal'); const confirmOkBtn = document.getElementById('confirm-ok-btn'); const confirmCancelBtn = document.getElementById('confirm-cancel-btn'); const confirmTitle = document.getElementById('confirm-title'); const confirmText = document.getElementById('confirm-text'); let resolveConfirm; function showConfirm(text, title = '請確認') { confirmTitle.textContent = title; confirmText.textContent = text; openModal(confirmModal); return new Promise((resolve) => { resolveConfirm = resolve; }); }
         confirmOkBtn.addEventListener('click', () => { closeModal(confirmModal); if (resolveConfirm) resolveConfirm(true); });
-        confirmCancelBtn.addEventListener('click', () => { closeModal(confirmModal); if (resolveConfirm) resolveConfirm(false); });
+        cancelFormBtn.addEventListener('click', () => { closeModal(confirmModal); if (resolveConfirm) resolveConfirm(false); });
 
     </script>
 </body>
