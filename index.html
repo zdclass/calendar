@@ -337,6 +337,7 @@
                 rerender();
                 if (isInitialLoad) {
                     scrollToCurrentMonth();
+                    scrollToCurrentEvent();
                     isInitialLoad = false;
                 }
                 loadingOverlay.style.display = 'none';
@@ -360,6 +361,7 @@
 
                 if (isInitialLoad) {
                     scrollToCurrentMonth();
+                    scrollToCurrentEvent();
                     isInitialLoad = false;
                 }
 
@@ -371,6 +373,7 @@
                 rerender();
                 if (isInitialLoad) {
                     scrollToCurrentMonth();
+                    scrollToCurrentEvent();
                     isInitialLoad = false;
                 }
                 loadingOverlay.style.display = 'none';
@@ -423,6 +426,15 @@
                 setTimeout(() => {
                     targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }, 200);
+            }
+        }
+
+        function scrollToCurrentEvent() {
+            const targetElement = document.getElementById('current-month-event-marker');
+            if (targetElement) {
+                setTimeout(() => {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200); // Small delay to ensure rendering is complete
             }
         }
 
@@ -511,24 +523,34 @@
         function renderEventsList() {
             eventsListContainer.innerHTML = '';
             const sortedEvents = events.filter(e => e.desc).sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+            let markerAdded = false;
 
             sortedEvents.forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.className = 'flex items-center space-x-3 p-2 rounded-lg';
                 const startDate = new Date(event.date + 'T00:00:00Z');
+
+                // Add ID to the first event of the current month or a future month
+                if (!markerAdded) {
+                    const eventYear = startDate.getUTCFullYear();
+                    const eventMonth = startDate.getUTCMonth();
+                    if (eventYear > currentYear || (eventYear === currentYear && eventMonth >= currentMonth)) {
+                        eventElement.id = 'current-month-event-marker';
+                        markerAdded = true;
+                    }
+                }
+                
                 let dateText = event.date_end 
                     ? `${startDate.getUTCMonth()+1}/${startDate.getUTCDate()}-${new Date(event.date_end+'T00:00:00Z').getUTCMonth()+1}/${new Date(event.date_end+'T00:00:00Z').getUTCDate()}` 
                     : `${startDate.getUTCMonth()+1}/${startDate.getUTCDate()}`;
                 
-                let buttonsHTML = '';
-                if (currentUser) {
-                    buttonsHTML = `<div class="flex-shrink-0 flex space-x-2"></div>`;
-                }
-
                 eventElement.innerHTML = `
                     <div class="w-24 text-right flex-shrink-0"><span class="font-semibold ${event.special ? 'text-red-500' : 'text-blue-600 dark:text-blue-400'}">${dateText}</span></div>
-                    <div class="flex-grow text-gray-700 dark:text-gray-300">${event.desc}</div>
-                    ${buttonsHTML}`;
+                    <div class="flex-grow text-gray-700 dark:text-gray-300">${event.desc}</div>`;
                 
                 eventsListContainer.appendChild(eventElement);
             });
