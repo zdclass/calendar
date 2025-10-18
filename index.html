@@ -92,7 +92,7 @@
 
 
     <div class="container mx-auto p-4 sm:p-6 lg:p-8">
-        <header class="text-center mb-8 relative">
+        <header class="text-center mb-4 relative">
             <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white">彰化縣立土庫國民小學</h1>
             <h2 class="text-lg sm:text-xl lg:text-2xl font-semibold text-blue-600 dark:text-blue-400">114 學年度第 1 學期行事曆</h2>
             <div class="absolute top-0 right-0 flex items-center space-x-2">
@@ -102,20 +102,16 @@
             </div>
         </header>
 
-        <!-- Today/Tomorrow Events Section -->
-        <section id="agenda-section" class="mb-8 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        <!-- Today/Tomorrow Events -->
+        <section class="my-6 p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <h3 class="text-xl font-bold mb-3 border-b-2 border-gray-200 dark:border-gray-700 pb-2 text-gray-800 dark:text-gray-200">今日事項</h3>
-                    <div id="today-agenda" class="space-y-2 text-gray-700 dark:text-gray-300 min-h-[40px]">
-                        <!-- Today's events will be populated here -->
-                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b-2 border-blue-500 pb-2 mb-2">今日事項</h3>
+                    <div id="today-events" class="text-sm text-gray-600 dark:text-gray-300"></div>
                 </div>
                 <div>
-                    <h3 class="text-xl font-bold mb-3 border-b-2 border-gray-200 dark:border-gray-700 pb-2 text-gray-800 dark:text-gray-200">明日事項</h3>
-                    <div id="tomorrow-agenda" class="space-y-2 text-gray-700 dark:text-gray-300 min-h-[40px]">
-                        <!-- Tomorrow's events will be populated here -->
-                    </div>
+                    <h3 class="text-lg font-bold text-gray-800 dark:text-white border-b-2 border-green-500 pb-2 mb-2">明日事項</h3>
+                    <div id="tomorrow-events" class="text-sm text-gray-600 dark:text-gray-300"></div>
                 </div>
             </div>
         </section>
@@ -131,7 +127,7 @@
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 lg:sticky top-8">
                     <div class="flex justify-between items-center mb-4 border-b-2 border-gray-200 dark:border-gray-700 pb-2">
                         <h3 class="text-2xl font-bold">重要行事</h3>
-                        <button id="add-event-btn" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">新增</button>
+                        <button id="add-event-btn-main" class="hidden bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">新增</button>
                     </div>
                     <div id="events-list" class="space-y-3 h-[75vh] overflow-y-auto pr-2">
                         <!-- Events will be generated here -->
@@ -144,52 +140,50 @@
     <!-- Tooltip -->
     <div id="tooltip" class="tooltip absolute z-50 hidden p-2 text-sm text-white bg-black rounded-md shadow-lg opacity-0 max-w-xs"></div>
 
-    <!-- Day Action Modal (Unified Add/Edit/View) -->
-    <div id="day-action-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden opacity-0">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-1/2 lg:w-1/3 p-6 transform transition-transform scale-95">
-            <div class="flex justify-between items-center border-b pb-3 mb-4">
+    <!-- Day Management Modal -->
+    <div id="day-modal" class="modal fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden opacity-0">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-11/12 md:w-2/3 lg:w-1/2 max-w-2xl p-6 transform transition-transform scale-95 flex flex-col" style="max-height: 90vh;">
+            <div class="flex justify-between items-center border-b pb-3 mb-4 flex-shrink-0">
                 <h3 id="modal-date-title" class="text-xl font-bold"></h3>
-                <button id="close-day-action-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-white">&times;</button>
+                <button id="close-day-modal" class="text-gray-500 hover:text-gray-800 dark:hover:text-white text-2xl">&times;</button>
             </div>
             
-            <div id="admin-only-content" class="hidden">
-                <h4 class="text-lg font-semibold mb-2">當日活動</h4>
-                <div id="modal-events-list" class="space-y-2 mb-6 max-h-40 overflow-y-auto p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                    <!-- Existing events for the day will be listed here -->
-                </div>
-
-                <div class="border-t dark:border-gray-600 pt-4">
-                    <h4 id="form-title" class="text-lg font-semibold mb-3">新增活動</h4>
-                    <form id="event-form">
-                        <input type="hidden" id="event-id">
-                        <div class="mb-4">
-                            <label for="event-desc" class="block text-sm font-medium text-gray-700 dark:text-gray-300">活動說明</label>
-                            <input type="text" id="event-desc" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
-                        </div>
-                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label for="event-start-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">開始日期</label>
-                                <input type="date" id="event-start-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
-                            </div>
-                            <div>
-                                <label for="event-end-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">結束日期 (選填)</label>
-                                <input type="date" id="event-end-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                            </div>
-                        </div>
-                        <div class="flex items-center mb-4">
-                            <input type="checkbox" id="event-special" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                            <label for="event-special" class="ml-2 block text-sm text-gray-900 dark:text-gray-200">標示為特殊假日/活動</label>
-                        </div>
-                        <div class="flex justify-end space-x-3">
-                            <button type="button" id="cancel-form-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">清除</button>
-                            <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">儲存</button>
-                        </div>
-                    </form>
-                </div>
+            <div class="overflow-y-auto mb-4 pr-2 flex-grow">
+                <h4 class="text-lg font-semibold mb-2">當日活動列表</h4>
+                <div id="modal-events-list" class="space-y-2"></div>
             </div>
-             <div id="guest-view-content">
-                <h4 class="text-lg font-semibold mb-2">當日活動</h4>
-                <div id="guest-events-list" class="space-y-2"></div>
+
+            <div id="event-form-container" class="hidden flex-shrink-0 pt-4 border-t">
+                <h4 id="form-title" class="text-lg font-semibold mb-3">新增/修改活動</h4>
+                <form id="event-form">
+                    <input type="hidden" id="event-id">
+                    <input type="hidden" id="event-date-hidden">
+                    <div class="mb-4">
+                        <label for="event-desc" class="block text-sm font-medium text-gray-700 dark:text-gray-300">活動說明</label>
+                        <input type="text" id="event-desc" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                         <div>
+                            <label for="event-start-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">開始日期</label>
+                            <input type="date" id="event-start-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500" required>
+                        </div>
+                        <div>
+                            <label for="event-end-date" class="block text-sm font-medium text-gray-700 dark:text-gray-300">結束日期 (選填)</label>
+                            <input type="date" id="event-end-date" class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+                    <div class="flex items-center mb-4">
+                        <input type="checkbox" id="event-special" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <label for="event-special" class="ml-2 block text-sm text-gray-900 dark:text-gray-200">標示為特殊假日/活動</label>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-form-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-lg">取消</button>
+                        <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg">儲存</button>
+                    </div>
+                </form>
+            </div>
+             <div id="add-event-container" class="flex-shrink-0 pt-4 border-t">
+                <button id="add-event-modal-btn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">新增至此日期</button>
             </div>
         </div>
     </div>
@@ -213,217 +207,245 @@
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, doc, addDoc, updateDoc, deleteDoc, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- DOM Elements ---
+        // --- Firebase Initialization ---
+        let app, auth, db, eventsCollectionRef;
+        let firebaseInitialized = false;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // --- App State ---
+        let events = [];
+        let currentUser = null;
+        let unsubscribe = null; 
+        let isInitialLoad = true;
+
+        // --- UI Elements ---
+        const loadingOverlay = document.getElementById('loading-overlay');
         const calendarContainer = document.getElementById('calendar-container');
         const eventsListContainer = document.getElementById('events-list');
         const tooltip = document.getElementById('tooltip');
-        const loadingOverlay = document.getElementById('loading-overlay');
         const authStatus = document.getElementById('auth-status');
-        const addEventBtn = document.getElementById('add-event-btn');
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = document.getElementById('logout-btn');
-        const dayActionModal = document.getElementById('day-action-modal');
-        const closeDayActionModalBtn = document.getElementById('close-day-action-modal');
-        const modalDateTitle = document.getElementById('modal-date-title');
-        const modalEventsList = document.getElementById('modal-events-list');
-        const guestViewContent = document.getElementById('guest-view-content');
-        const guestEventsList = document.getElementById('guest-events-list');
-        const adminOnlyContent = document.getElementById('admin-only-content');
-        const eventForm = document.getElementById('event-form');
-        const eventFormTitle = document.getElementById('form-title');
-        const cancelFormBtn = document.getElementById('cancel-form-btn');
+        const addEventBtnMain = document.getElementById('add-event-btn-main');
         const loginModal = document.getElementById('login-modal');
         const loginForm = document.getElementById('login-form');
         const loginError = document.getElementById('login-error');
         const cancelLoginBtn = document.getElementById('cancel-login-btn');
-        
-        // --- App State ---
-        let app, auth, db;
-        let eventsCollectionRef;
-        let events = [];
-        let currentUser = null;
-        let unsubscribe = null; 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const dayModal = document.getElementById('day-modal');
+        const closeDayModalBtn = document.getElementById('close-day-modal');
+        const modalDateTitle = document.getElementById('modal-date-title');
+        const modalEventsList = document.getElementById('modal-events-list');
+        const eventFormContainer = document.getElementById('event-form-container');
+        const eventForm = document.getElementById('event-form');
+        const formTitle = document.getElementById('form-title');
+        const cancelFormBtn = document.getElementById('cancel-form-btn');
+        const addEventModalBtn = document.getElementById('add-event-modal-btn');
+        const todayEventsEl = document.getElementById('today-events');
+        const tomorrowEventsEl = document.getElementById('tomorrow-events');
 
         const initialEvents = [
             { date: "2025-09-01", desc: "開學日/備課週開始、上課" }, { date: "2025-09-01", date_end: "2025-09-12", desc: "友善校園週暨反霸凌活動" }, { date: "2025-09-08", desc: "國中第8節輔導課、學習扶助課程及晚自習開始" }, { date: "2025-09-09", date_end: "2025-09-18", desc: "註冊組發放期初程" }, { date: "2025-09-15", date_end: "2025-10-03", desc: "身高體重視力檢查開始" }, { date: "2025-09-16", desc: "一年級環保局家庭廢棄物問卷" }, { date: "2025-09-18", desc: "國家防災日預演" }, { date: "2025-09-19", desc: "國家防災日演練" }, { date: "2025-09-26", desc: "八年級HPV疫苗接種、全校班親會" }, { date: "2025-09-28", desc: "教師節", special: true }, { date: "2025-09-29", desc: "補假 (教師節)", symbol: '■' }, { date: "2025-10-06", desc: "國慶放假", symbol: '■' }, { date: "2025-10-09", desc: "佛光先生舍利講座(五年級)" }, { date: "2025-10-10", desc: "國慶日放假", special: true }, { date: "2025-10-13", symbol: '▲' }, { date: "2025-10-14", date_end: "2025-10-15", desc: "國中第1次定期評量" }, { date: "2025-10-14", desc: "一年級入學測驗(智力)" }, { date: "2025-10-14", desc: "四年級參觀人口政策計畫" }, { date: "2025-10-16", desc: "十年級抽血檢查" }, { date: "2025-10-16", date_end: "2025-10-17", desc: "九年級畢旅" }, { date: "2025-10-20", date_end: "2025-10-31", desc: "國中小藝術季布置(國中美術)" }, { date: "2025-10-21", desc: "全校流感疫苗接種" }, { date: "2025-10-24", desc: "補假" }, { date: "2025-10-25", desc: "光復節放假", special: true }, { date: "2025-10-27", desc: "作業抽查(國中社會)" }, { date: "2025-10-28", desc: "作業抽查(國小中年級)" }, { date: "2025-10-29", desc: "七年級抽血檢查" }, { date: "2025-11-01", desc: "親職講座" }, { date: "2025-11-04", desc: "作業抽查(國中小英文)(11/12國小英文)" }, { date: "2025-11-05", date_end: "2025-11-06", desc: "國小第1次定期評量" , symbol_start: '▼', symbol_end: '□' }, { date: "2025-11-06", date_end: "2025-11-07", desc: "九年級心理測驗參考" }, { date: "2025-11-07", desc: "一、四、七年級健康檢查" }, { date: "2025-11-18", desc: "國小一、六年級戶外教育" }, { date: "2025-11-21", desc: "作業抽查(國中自然)" }, { date: "2025-11-26", desc: "作業抽查(國中數學、八年級聯絡簿)" }, { date: "2025-11-26", desc: "吃水果日/發放通知" }, { date: "2025-11-30", symbol: '▲' }, { date: "2025-12-01", date_end: "2025-12-02", desc: "國中第2次定期評量", symbol_end: '▼' }, { date: "2025-12-03", desc: "作業抽查(國小國語)", symbol: '□' }, { date: "2025-12-03", desc: "藝文競賽(才藝子弟)書法、繪畫及作文" }, { date: "2025-12-10", desc: "國小英語朗讀比賽" }, { date: "2025-12-13", desc: "校慶運動會", special: true }, { date: "2025-12-15", desc: "校慶補假", symbol: '■' }, { date: "2025-12-17", desc: "作業抽查(國小自然)" }, { date: "2025-12-21", symbol: '▲' }, { date: "2025-12-23", desc: "藝文競賽(演講、朗讀及說故事)" }, { date: "2025-12-23", date_end: "2025-12-24", desc: "九年級技藝班術科抽離會考" }, { date: "2025-12-24", desc: "作業抽查(國中自習)", symbol: '■' }, { date: "2025-12-25", desc: "行憲紀念日放假", symbol: '□' }, { date: "2025-12-31", desc: "國中小藝術季開幕才藝表演" }, { date: "2025-12-31", desc: "九年級聯絡簿抽查" }, { date: "2026-01-01", desc: "元旦放假", special: true, symbol: '□' }, { date: "2026-01-02", symbol: '■' }, { date: "2026-01-05", date_end: "2026-01-09", desc: "國中美術才藝換商品卡" }, { date: "2026-01-08", desc: "校內本土語文競賽" }, { date: "2026-01-09", desc: "作業抽查(國小作文)" }, { date: "2026-01-12", symbol: '▲' }, { date: "2026-01-13", date_end: "2026-01-14", desc: "國小第2次定期評量" }, { date: "2026-01-15", date_end: "2026-01-16", desc: "國中第3次定期評量", symbol_start: '▼', symbol_end: '□' }, { date: "2026-01-19", symbol: '▲' }, { date: "2026-01-20", desc: "休業式", symbol: '▼' }, { date: "2026-01-21", date_end: "2026-01-23", desc: "補下學期課程" }, { date: "2026-01-24", desc: "放寒假", special: true }
         ];
 
-        // --- Core Functions (hoisted) ---
-        function rerender() {
+        // --- Core Functions ---
+        const rerender = () => {
+            if (!document.body.contains(calendarContainer)) return; // Ensure elements exist
+            calendarContainer.innerHTML = '';
+            eventsListContainer.innerHTML = '';
+
             const eventMap = new Map();
             events.forEach(event => {
-                const [startY, startM, startD] = event.date.split('-').map(Number);
-                const startDate = new Date(Date.UTC(startY, startM - 1, startD));
-                const endDate = event.date_end
-                    ? new Date(Date.UTC(...event.date_end.split('-').map((n, i) => i === 1 ? n - 1 : Number(n))))
-                    : new Date(startDate.getTime());
-                for (let d = startDate; d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
+                // Use UTC dates to avoid timezone issues
+                const startDate = new Date(event.date + 'T00:00:00Z');
+                const endDate = event.date_end ? new Date(event.date_end + 'T00:00:00Z') : startDate;
+                for (let d = new Date(startDate); d <= endDate; d.setUTCDate(d.getUTCDate() + 1)) {
                     const dateString = d.toISOString().split('T')[0];
                     if (!eventMap.has(dateString)) eventMap.set(dateString, []);
                     eventMap.get(dateString).push(event);
                 }
             });
-
-            renderAgenda(eventMap);
+            renderTodayTomorrow(eventMap);
             renderCalendars(eventMap);
             renderEventsList();
+        };
+
+        function setupApp() {
+            try {
+                const firebaseConfig = {
+                    apiKey: "__API_KEY__",
+                    authDomain: "__AUTH_DOMAIN__",
+                    projectId: "__PROJECT_ID__",
+                    storageBucket: "__STORAGE_BUCKET__",
+                    messagingSenderId: "__MESSAGING_SENDER_ID__",
+                    appId: "__APP_ID__",
+                    measurementId: "__MEASUREMENT_ID__"
+                };
+
+                if (firebaseConfig.apiKey.startsWith("__")) {
+                    throw new Error("Firebase config placeholders not replaced. Run this through the GitHub Actions workflow.");
+                }
+
+                console.log("Initializing Firebase with Project ID:", firebaseConfig.projectId);
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                eventsCollectionRef = collection(db, "artifacts", appId, "public/data", "events");
+                firebaseInitialized = true;
+                
+            } catch (e) {
+                console.error("Firebase Initialization Error:", e.message);
+                firebaseInitialized = false;
+            }
+
+            // Always setup listener, it will handle fallback
+            setupSnapshotListener();
+
+            // Setup Auth listener
+            if (firebaseInitialized) {
+                onAuthStateChanged(auth, handleAuthStateChange);
+            } else {
+                handleAuthStateChange(null); // Force guest mode
+            }
+        }
+
+        function handleAuthStateChange(user) {
+            if (user) {
+                currentUser = user;
+                authStatus.textContent = `管理員已登入`;
+                loginBtn.classList.add('hidden');
+                logoutBtn.classList.remove('hidden');
+                addEventBtnMain.classList.remove('hidden');
+
+                // Check and seed data only after admin logs in
+                seedInitialDataIfNeeded();
+            } else {
+                currentUser = null;
+                authStatus.textContent = '訪客模式';
+                loginBtn.classList.remove('hidden');
+                logoutBtn.classList.add('hidden');
+                addEventBtnMain.classList.add('hidden');
+            }
+            rerender();
         }
 
         function setupSnapshotListener() {
             loadingOverlay.style.display = 'flex';
+
+            if (!firebaseInitialized) {
+                console.warn("Firebase not initialized. Falling back to local initialEvents data.");
+                events = initialEvents;
+                rerender();
+                if (isInitialLoad) {
+                    scrollToCurrentMonth();
+                    isInitialLoad = false;
+                }
+                loadingOverlay.style.display = 'none';
+                return;
+            }
             
             if (unsubscribe) unsubscribe();
+
             unsubscribe = onSnapshot(eventsCollectionRef, (snapshot) => {
                 events = [];
                 snapshot.forEach((doc) => {
                     events.push({ id: doc.id, ...doc.data() });
                 });
 
-                if(snapshot.empty && !currentUser){
+                if (snapshot.empty && !currentUser) {
+                    // DB is empty and user is a guest, use local data as fallback
                     events = initialEvents;
                 }
+                
                 rerender();
+
+                if (isInitialLoad) {
+                    scrollToCurrentMonth();
+                    isInitialLoad = false;
+                }
+
                 loadingOverlay.style.display = 'none';
             }, (error) => {
                 console.error("Error fetching events from Firestore:", error.message);
-                if (!currentUser) {
-                    events = initialEvents;
-                    rerender();
+                // Fallback to local data on permission error for guests
+                events = initialEvents;
+                rerender();
+                if (isInitialLoad) {
+                    scrollToCurrentMonth();
+                    isInitialLoad = false;
                 }
                 loadingOverlay.style.display = 'none';
             });
         }
         
-        // --- App Initialization ---
-        try {
-            const firebaseConfig = {
-                apiKey: "__API_KEY__",
-                authDomain: "__AUTH_DOMAIN__",
-                projectId: "__PROJECT_ID__",
-                storageBucket: "__STORAGE_BUCKET__",
-                messagingSenderId: "__MESSAGING_SENDER_ID__",
-                appId: "__APP_ID__",
-                measurementId: "__MEASUREMENT_ID__"
-            };
-
-            if (firebaseConfig.apiKey.startsWith("__")) {
-                 throw new Error("Firebase config placeholders not replaced. Run this through the GitHub Actions workflow.");
-            }
-
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            eventsCollectionRef = collection(db, "artifacts", appId, "public/data", "events");
-            
-            setupSnapshotListener();
-
-        } catch (e) {
-            console.error("Firebase Initialization Error:", e.message);
-            authStatus.textContent = "Firebase 初始化失敗，顯示預設資料。";
-            // Fallback to local data if Firebase fails
-            events = initialEvents;
-            rerender();
-            loadingOverlay.style.display = 'none';
-        }
-
-        // --- Auth State Change Logic ---
-        if (auth) {
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    currentUser = user;
-                    authStatus.textContent = `管理員已登入`;
-                    loginBtn.classList.add('hidden');
-                    logoutBtn.classList.remove('hidden');
-                    addEventBtn.classList.remove('hidden');
-
-                    try {
-                        const querySnapshot = await getDocs(eventsCollectionRef);
-                        if (querySnapshot.empty) {
-                            const batch = writeBatch(db);
-                            initialEvents.forEach(event => {
-                                const docRef = doc(eventsCollectionRef);
-                                batch.set(docRef, event);
-                            });
-                            await batch.commit();
-                        }
-                    } catch (err) {
-                        console.error("Error during admin's data seed check:", err);
-                    }
-                } else {
-                    currentUser = null;
-                    authStatus.textContent = '訪客模式';
-                    loginBtn.classList.remove('hidden');
-                    logoutBtn.classList.add('hidden');
-                    addEventBtn.classList.add('hidden');
+        async function seedInitialDataIfNeeded() {
+            if (!firebaseInitialized || !currentUser) return;
+            try {
+                const querySnapshot = await getDocs(eventsCollectionRef);
+                if (querySnapshot.empty) {
+                    console.log("Database is empty. Seeding initial data as admin...");
+                    const batch = writeBatch(db);
+                    initialEvents.forEach(event => {
+                        const docRef = doc(eventsCollectionRef);
+                        batch.set(docRef, event);
+                    });
+                    await batch.commit();
+                    console.log("Initial data seeded successfully.");
                 }
-                rerender(); // Re-render to show/hide admin controls on list
-            });
+            } catch (err) {
+                console.error("Error during admin's data seed check:", err);
+            }
         }
         
-        // --- Login/Logout Logic ---
-        loginBtn.addEventListener('click', () => {
-            loginForm.reset();
-            loginError.textContent = '';
-            openModal(loginModal);
-        });
-        cancelLoginBtn.addEventListener('click', () => closeModal(loginModal) );
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            if (!auth) {
-                loginError.textContent = 'Firebase 未初始化，無法登入。';
-                return;
-            }
-            loginError.textContent = '';
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            const loginButton = e.target.querySelector('button[type="submit"]');
-            loginButton.disabled = true;
-            loginButton.textContent = '登入中...';
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                closeModal(loginModal);
-            } catch (error) {
-                loginError.textContent = '帳號或密碼錯誤。';
-            } finally {
-                loginButton.disabled = false;
-                loginButton.textContent = '登入';
-            }
-        });
-        logoutBtn.addEventListener('click', () => {
-            if (auth) signOut(auth)
-        });
+        function scrollToCurrentMonth() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth(); // 0-11
+            
+            const startYear = 2025, startMonth = 8; // September is 8
+            const endYear = 2026, endMonth = 0; // January is 0
 
-        // --- Render Functions ---
-        function renderAgenda(eventMap) {
-            const todayAgendaContainer = document.getElementById('today-agenda');
-            const tomorrowAgendaContainer = document.getElementById('tomorrow-agenda');
+            let targetYear = currentYear;
+            let targetMonth = currentMonth;
+
+            // Clamp the date to the calendar's display range
+            if (targetYear < startYear || (targetYear === startYear && targetMonth < startMonth)) {
+                targetYear = startYear;
+                targetMonth = startMonth;
+            } else if (targetYear > endYear || (targetYear === endYear && targetMonth > endMonth)) {
+                targetYear = endYear;
+                targetMonth = endMonth;
+            }
+
+            const targetId = `month-${targetYear}-${targetMonth}`;
+            const targetElement = document.getElementById(targetId);
+
+            if (targetElement) {
+                setTimeout(() => {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 200);
+            }
+        }
+
+        function renderTodayTomorrow(eventMap) {
             const today = new Date();
             const tomorrow = new Date();
             tomorrow.setDate(today.getDate() + 1);
-            const todayString = today.toLocaleDateString('sv');
-            const tomorrowString = tomorrow.toLocaleDateString('sv');
-            const populateAgenda = (container, dateString) => {
-                container.innerHTML = '';
-                const dayEvents = eventMap.get(dateString) || [];
-                const filteredEvents = dayEvents.filter(e => e.desc);
-                if (filteredEvents.length > 0) {
-                    filteredEvents.forEach(event => {
-                        const p = document.createElement('p');
-                        p.className = `p-2 rounded-md ${event.special ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300' : 'bg-blue-100 dark:bg-blue-800'}`;
-                        p.textContent = event.desc;
-                        container.appendChild(p);
-                    });
-                } else {
-                    container.innerHTML = '<p class="text-gray-500">無預定事項</p>';
-                }
-            };
-            populateAgenda(todayAgendaContainer, todayString);
-            populateAgenda(tomorrowAgendaContainer, tomorrowString);
+
+            const todayString = today.toISOString().split('T')[0];
+            const tomorrowString = tomorrow.toISOString().split('T')[0];
+
+            const todayEvents = eventMap.get(todayString) || [];
+            const tomorrowEvents = eventMap.get(tomorrowString) || [];
+
+            todayEventsEl.innerHTML = todayEvents.length > 0 
+                ? todayEvents.map(e => `<div>- ${e.desc}</div>`).join('') 
+                : '<p>無</p>';
+            tomorrowEventsEl.innerHTML = tomorrowEvents.length > 0 
+                ? tomorrowEvents.map(e => `<div>- ${e.desc}</div>`).join('') 
+                : '<p>無</p>';
         }
 
         function renderCalendars(eventMap) {
-            calendarContainer.innerHTML = '';
             const startYear = 2025, startMonth = 8, endYear = 2026, endMonth = 0;
             for (let y = startYear; y <= endYear; y++) {
                 const mStart = (y === startYear) ? startMonth : 0;
@@ -433,9 +455,10 @@
                 }
             }
         }
-
+        
         function renderMonth(year, month, eventMap) {
             const monthContainer = document.createElement('div');
+            monthContainer.id = `month-${year}-${month}`;
             monthContainer.className = 'bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg';
             const monthName = new Date(year, month).toLocaleString('zh-Hant', { month: 'long', year: 'numeric' });
             const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六'];
@@ -443,9 +466,10 @@
             monthContainer.innerHTML = headerHTML;
             const bodyEl = document.createElement('div');
             bodyEl.className = 'grid calendar-grid gap-1';
-            const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
-            const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
             for (let i = 0; i < firstDay; i++) bodyEl.appendChild(document.createElement('div'));
+
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(Date.UTC(year, month, day));
                 const dateString = date.toISOString().split('T')[0];
@@ -455,13 +479,13 @@
                 const contentEl = document.createElement('div');
                 contentEl.className = 'day-content rounded-lg';
                 contentEl.textContent = day;
+
                 if (dayEvents.length > 0) {
                     const hasSpecial = dayEvents.some(e => e.special);
-                    const hasNormal = dayEvents.some(e => e.desc);
-                    if (hasNormal) contentEl.classList.add('bg-blue-100', 'dark:bg-blue-800');
                     if (hasSpecial) {
-                        contentEl.classList.remove('bg-blue-100', 'dark:bg-blue-800');
                         contentEl.classList.add('bg-red-100', 'dark:bg-red-900', 'text-red-600', 'dark:text-red-300', 'font-bold');
+                    } else {
+                        contentEl.classList.add('bg-blue-100', 'dark:bg-blue-800');
                     }
                     cellEl.addEventListener('mouseenter', (e) => showTooltip(dayEvents, e));
                     cellEl.addEventListener('mousemove', (e) => updateTooltipPosition(e));
@@ -476,7 +500,7 @@
                 } else {
                     cellEl.classList.add('hover:bg-gray-100', 'dark:hover:bg-gray-700');
                 }
-                cellEl.addEventListener('click', () => openDayActionModal(dateString, dayEvents));
+                cellEl.addEventListener('click', () => showDayModal(dateString, dayEvents));
                 cellEl.appendChild(contentEl);
                 bodyEl.appendChild(cellEl);
             }
@@ -487,157 +511,193 @@
         function renderEventsList() {
             eventsListContainer.innerHTML = '';
             const sortedEvents = events.filter(e => e.desc).sort((a,b) => new Date(a.date) - new Date(b.date));
+
             sortedEvents.forEach(event => {
                 const eventElement = document.createElement('div');
                 eventElement.className = 'flex items-center space-x-3 p-2 rounded-lg';
-                const formatUtcDate = (dateStr) => {
-                    if (!dateStr) return '';
-                    const parts = dateStr.split('-');
-                    return `${parseInt(parts[1], 10)}/${parseInt(parts[2], 10)}`;
-                };
+                const startDate = new Date(event.date + 'T00:00:00Z');
                 let dateText = event.date_end 
-                    ? `${formatUtcDate(event.date)}-${formatUtcDate(event.date_end)}` 
-                    : formatUtcDate(event.date);
+                    ? `${startDate.getUTCMonth()+1}/${startDate.getUTCDate()}-${new Date(event.date_end+'T00:00:00Z').getUTCMonth()+1}/${new Date(event.date_end+'T00:00:00Z').getUTCDate()}` 
+                    : `${startDate.getUTCMonth()+1}/${startDate.getUTCDate()}`;
+                
                 let buttonsHTML = '';
                 if (currentUser) {
-                    buttonsHTML = `<div class="flex-shrink-0 flex space-x-2"><button data-id="${event.id}" class="edit-btn text-gray-400 hover:text-blue-500 transition-colors text-sm">編輯</button><button data-id="${event.id}" class="delete-btn text-gray-400 hover:text-red-500 transition-colors text-sm">刪除</button></div>`;
+                    buttonsHTML = `<div class="flex-shrink-0 flex space-x-2"></div>`;
                 }
-                eventElement.innerHTML = `<div class="w-24 text-right flex-shrink-0"><span class="font-semibold ${event.special ? 'text-red-500' : 'text-blue-600 dark:text-blue-400'}">${dateText}</span></div><div class="flex-grow text-gray-700 dark:text-gray-300">${event.desc}</div>${buttonsHTML}`;
-                if (currentUser) {
-                    eventElement.querySelector('.edit-btn').addEventListener('click', () => {
-                         const dayEvents = events.filter(e => e.date === event.date || (e.date_end && event.date >= e.date && event.date <= e.date_end));
-                         openDayActionModal(event.date, dayEvents, event.id);
-                    });
-                    eventElement.querySelector('.delete-btn').addEventListener('click', () => deleteEvent(event.id));
-                }
+
+                eventElement.innerHTML = `
+                    <div class="w-24 text-right flex-shrink-0"><span class="font-semibold ${event.special ? 'text-red-500' : 'text-blue-600 dark:text-blue-400'}">${dateText}</span></div>
+                    <div class="flex-grow text-gray-700 dark:text-gray-300">${event.desc}</div>
+                    ${buttonsHTML}`;
+                
                 eventsListContainer.appendChild(eventElement);
             });
         }
         
-        // --- UI Interaction Functions ---
+        // --- Event Handlers & UI Logic ---
+        document.addEventListener('DOMContentLoaded', setupApp);
+        loginBtn.addEventListener('click', () => { loginForm.reset(); loginError.textContent = ''; openModal(loginModal); });
+        cancelLoginBtn.addEventListener('click', () => closeModal(loginModal));
+        logoutBtn.addEventListener('click', () => { if(firebaseInitialized) signOut(auth); });
+        addEventBtnMain.addEventListener('click', () => showDayModal(new Date().toISOString().split('T')[0], []));
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!firebaseInitialized) {
+                loginError.textContent = 'Firebase 未初始化。';
+                return;
+            }
+            loginError.textContent = '';
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+            submitButton.textContent = '登入中...';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                closeModal(loginModal);
+            } catch (error) {
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    loginError.textContent = '帳號或密碼錯誤。';
+                } else {
+                    loginError.textContent = '登入時發生錯誤。';
+                }
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = '登入';
+            }
+        });
+
+        const showDayModal = (dateString, dayEvents) => {
+            const date = new Date(dateString + 'T00:00:00Z');
+            modalDateTitle.textContent = date.toLocaleDateString('zh-Hant', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+            document.getElementById('event-date-hidden').value = dateString;
+            
+            modalEventsList.innerHTML = '';
+            const filteredEvents = dayEvents.filter(ev => ev.desc);
+            if (filteredEvents.length > 0) {
+                filteredEvents.forEach(ev => {
+                    const p = document.createElement('div');
+                    p.className = 'p-2 rounded-md bg-gray-100 dark:bg-gray-700 flex justify-between items-center';
+                    p.innerHTML = `<span>${ev.desc}</span>`;
+
+                    if (currentUser) {
+                        const buttonsDiv = document.createElement('div');
+                        buttonsDiv.className = 'space-x-2';
+                        const editBtn = document.createElement('button');
+                        editBtn.textContent = '編輯';
+                        editBtn.className = 'text-xs text-blue-500 hover:text-blue-700';
+                        editBtn.onclick = () => showEditForm(ev);
+                        
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = '刪除';
+                        deleteBtn.className = 'text-xs text-red-500 hover:text-red-700';
+                        deleteBtn.onclick = () => deleteEvent(ev.id);
+                        
+                        buttonsDiv.appendChild(editBtn);
+                        buttonsDiv.appendChild(deleteBtn);
+                        p.appendChild(buttonsDiv);
+                    }
+                    modalEventsList.appendChild(p);
+                });
+            } else {
+                modalEventsList.innerHTML = '<p class="text-gray-500">本日無特殊行程</p>';
+            }
+
+            // Reset and hide form initially
+            eventFormContainer.classList.add('hidden');
+            if(currentUser) {
+                addEventModalBtn.classList.remove('hidden');
+                addEventContainer.style.display = 'block';
+            } else {
+                addEventModalBtn.classList.add('hidden');
+                addEventContainer.style.display = 'none';
+            }
+            openModal(dayModal);
+        };
+
+        const addEventContainer = document.getElementById('add-event-container');
+        addEventModalBtn.addEventListener('click', () => {
+            const dateString = document.getElementById('event-date-hidden').value;
+            eventForm.reset();
+            document.getElementById('event-id').value = '';
+            document.getElementById('event-start-date').value = dateString;
+            formTitle.textContent = '新增活動';
+            eventFormContainer.classList.remove('hidden');
+            addEventContainer.style.display = 'none';
+        });
+
+        function showEditForm(event) {
+            formTitle.textContent = '修改活動';
+            document.getElementById('event-id').value = event.id;
+            document.getElementById('event-desc').value = event.desc || '';
+            document.getElementById('event-start-date').value = event.date;
+            document.getElementById('event-end-date').value = event.date_end || '';
+            document.getElementById('event-special').checked = event.special || false;
+            eventFormContainer.classList.remove('hidden');
+            addEventContainer.style.display = 'none';
+        }
+
+        closeDayModalBtn.addEventListener('click', () => closeModal(dayModal));
+        cancelFormBtn.addEventListener('click', () => {
+            eventFormContainer.classList.add('hidden');
+            if(currentUser) addEventContainer.style.display = 'block';
+        });
+
+        eventForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if(!currentUser || !firebaseInitialized) return;
+            const id = document.getElementById('event-id').value;
+            const eventData = {
+                desc: document.getElementById('event-desc').value.trim(),
+                date: document.getElementById('event-start-date').value,
+                date_end: document.getElementById('event-end-date').value || null,
+                special: document.getElementById('event-special').checked,
+            };
+
+            if (!eventData.desc || !eventData.date) {
+                alert("活動說明和開始日期為必填項。");
+                return;
+            }
+
+            const submitButton = e.target.querySelector('button[type="submit"]');
+            submitButton.disabled = true;
+
+            try {
+                if (id) {
+                    await updateDoc(doc(eventsCollectionRef, id), eventData);
+                } else {
+                    await addDoc(eventsCollectionRef, eventData);
+                }
+                closeModal(dayModal);
+            } catch (err) {
+                console.error("Error saving event:", err);
+                alert("儲存失敗，請稍後再試。");
+            } finally {
+                submitButton.disabled = false;
+            }
+        });
+        
+        const deleteEvent = async (id) => {
+            if(!currentUser || !firebaseInitialized) return;
+            const confirmed = await showConfirm('您確定要刪除這個活動嗎？');
+            if (confirmed) {
+                try {
+                    await deleteDoc(doc(eventsCollectionRef, id));
+                    closeModal(dayModal);
+                } catch (err) {
+                    console.error("Error deleting event:", err);
+                    alert("刪除失敗，請稍後再試。");
+                }
+            }
+        };
+
         const showTooltip = (dayEvents, e) => { const eventDescs = dayEvents.map(ev => ev.desc).filter(Boolean).join('<br>'); if (!eventDescs) return; tooltip.innerHTML = eventDescs; tooltip.classList.remove('hidden', 'opacity-0'); updateTooltipPosition(e); };
         const hideTooltip = () => tooltip.classList.add('hidden', 'opacity-0');
         const updateTooltipPosition = (e) => { tooltip.style.left = `${e.pageX + 15}px`; tooltip.style.top = `${e.pageY + 15}px`; };
         const openModal = (modal) => { modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); if (modal.querySelector('div:first-child')) { modal.querySelector('div:first-child').classList.remove('scale-95'); } }, 10); };
         const closeModal = (modal) => { modal.classList.add('opacity-0'); if (modal.querySelector('div:first-child')) { modal.querySelector('div:first-child').classList.add('scale-95'); } setTimeout(() => modal.classList.add('hidden'), 300); };
         
-        function openDayActionModal(dateString, dayEvents, editEventId = null) {
-            const date = new Date(dateString);
-            modalDateTitle.textContent = date.toLocaleDateString('zh-Hant', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
-            
-            if (currentUser) {
-                adminOnlyContent.classList.remove('hidden');
-                guestViewContent.classList.add('hidden');
-                modalEventsList.innerHTML = '';
-                const filteredEvents = dayEvents.filter(ev => ev.desc);
-                if (filteredEvents.length > 0) {
-                    filteredEvents.forEach(ev => {
-                        const item = document.createElement('div');
-                        item.className = 'flex justify-between items-center p-2 bg-gray-100 dark:bg-gray-600 rounded';
-                        item.innerHTML = `
-                            <span class="flex-grow mr-2">${ev.desc}</span>
-                            <div class="flex-shrink-0 space-x-2">
-                                <button data-id="${ev.id}" class="edit-event-btn text-blue-500 hover:text-blue-700 text-sm">編輯</button>
-                                <button data-id="${ev.id}" class="delete-event-btn text-red-500 hover:text-red-700 text-sm">刪除</button>
-                            </div>
-                        `;
-                        modalEventsList.appendChild(item);
-                    });
-                    modalEventsList.querySelectorAll('.edit-event-btn').forEach(btn => btn.addEventListener('click', (e) => {
-                        const eventToEdit = events.find(ev => ev.id === e.target.dataset.id);
-                        if(eventToEdit) populateFormForEdit(eventToEdit);
-                    }));
-                    modalEventsList.querySelectorAll('.delete-event-btn').forEach(btn => btn.addEventListener('click', (e) => deleteEvent(e.target.dataset.id)));
-                } else {
-                    modalEventsList.innerHTML = '<p class="text-gray-500 text-center">本日無活動</p>';
-                }
-                
-                if (editEventId) {
-                    const eventToEdit = events.find(ev => ev.id === editEventId);
-                    if(eventToEdit) populateFormForEdit(eventToEdit);
-                } else {
-                    resetFormForAdd(dateString);
-                }
-
-            } else {
-                adminOnlyContent.classList.add('hidden');
-                guestViewContent.classList.remove('hidden');
-                guestEventsList.innerHTML = '';
-                const filteredEvents = dayEvents.filter(ev => ev.desc);
-                if(filteredEvents.length > 0) {
-                    filteredEvents.forEach(ev => {
-                        const p = document.createElement('p');
-                        p.textContent = ev.desc;
-                        p.className = 'p-2 rounded-md bg-gray-100 dark:bg-gray-700';
-                        guestEventsList.appendChild(p);
-                    });
-                } else {
-                    guestEventsList.innerHTML = '<p class="text-gray-500">本日無特殊行程</p>';
-                }
-            }
-            openModal(dayActionModal);
-        }
-
-        closeDayActionModalBtn.addEventListener('click', () => closeModal(dayActionModal));
-
-        function populateFormForEdit(event) {
-            eventFormTitle.textContent = '修改活動';
-            document.getElementById('event-id').value = event.id;
-            document.getElementById('event-desc').value = event.desc || '';
-            document.getElementById('event-start-date').value = event.date;
-            document.getElementById('event-end-date').value = event.date_end || '';
-            document.getElementById('event-special').checked = event.special || false;
-        }
-
-        function resetFormForAdd(dateString) {
-            eventFormTitle.textContent = '新增活動';
-            eventForm.reset();
-            document.getElementById('event-id').value = '';
-            document.getElementById('event-start-date').value = dateString;
-        }
-
-        cancelFormBtn.addEventListener('click', () => {
-             const startDate = document.getElementById('event-start-date').value;
-             resetFormForAdd(startDate);
-        });
-
-        addEventBtn.addEventListener('click', () => {
-             const todayString = new Date().toLocaleDateString('sv');
-             const todayEvents = events.filter(e => {
-                 const startDate = new Date(e.date);
-                 const endDate = e.date_end ? new Date(e.date_end) : startDate;
-                 const today = new Date(todayString);
-                 return today >= startDate && today <= endDate;
-             });
-             openDayActionModal(todayString, todayEvents);
-        });
-
-        eventForm.addEventListener('submit', async (e) => { 
-            e.preventDefault(); 
-            if(!currentUser) return; 
-            const id = document.getElementById('event-id').value;
-            const eventData = { 
-                desc: document.getElementById('event-desc').value, 
-                date: document.getElementById('event-start-date').value, 
-                date_end: document.getElementById('event-end-date').value || null, 
-                special: document.getElementById('event-special').checked, 
-            }; 
-            if (id) { 
-                await updateDoc(doc(eventsCollectionRef, id), eventData); 
-            } else { 
-                await addDoc(eventsCollectionRef, eventData); 
-            } 
-            closeModal(dayActionModal); 
-        });
-
-        const deleteEvent = async (id) => { 
-            if(!currentUser) return; 
-            const confirmed = await showConfirm('您確定要刪除這個活動嗎？'); 
-            if (confirmed) { 
-                await deleteDoc(doc(eventsCollectionRef, id));
-                closeModal(dayActionModal);
-            } 
-        };
         const confirmModal = document.getElementById('confirm-modal'); const confirmOkBtn = document.getElementById('confirm-ok-btn'); const confirmCancelBtn = document.getElementById('confirm-cancel-btn'); const confirmTitle = document.getElementById('confirm-title'); const confirmText = document.getElementById('confirm-text'); let resolveConfirm; function showConfirm(text, title = '請確認') { confirmTitle.textContent = title; confirmText.textContent = text; openModal(confirmModal); return new Promise((resolve) => { resolveConfirm = resolve; }); }
         confirmOkBtn.addEventListener('click', () => { closeModal(confirmModal); if (resolveConfirm) resolveConfirm(true); });
         confirmCancelBtn.addEventListener('click', () => { closeModal(confirmModal); if (resolveConfirm) resolveConfirm(false); });
